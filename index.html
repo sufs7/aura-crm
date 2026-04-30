@@ -4,6 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Aura CRM</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
 <style>
 *{margin:0;padding:0;box-sizing:border-box}
@@ -15,12 +16,10 @@
 }
 body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;font-weight:300;min-height:100vh}
 ::-webkit-scrollbar{width:4px}::-webkit-scrollbar-thumb{background:rgba(201,168,76,0.3);border-radius:2px}
- 
-/* ── AUTH ── */
 #auth-screen{min-height:100vh;display:flex;align-items:center;justify-content:center;position:relative;overflow:hidden}
 .auth-bg{position:absolute;inset:0;background:radial-gradient(ellipse 60% 50% at 50% 30%,rgba(201,168,76,0.08),transparent 70%)}
 .auth-grid{position:absolute;inset:0;background-image:linear-gradient(var(--border) 1px,transparent 1px),linear-gradient(90deg,var(--border) 1px,transparent 1px);background-size:60px 60px;opacity:.4}
-.auth-card{background:var(--surface);border:1px solid var(--border);padding:2.5rem;width:360px;border-radius:4px;position:relative;z-index:1}
+.auth-card{background:var(--surface);border:1px solid var(--border);padding:2.5rem;width:380px;border-radius:4px;position:relative;z-index:1}
 .logo{font-family:'Cormorant Garamond',serif;font-size:1.8rem;font-weight:300;color:var(--gold-light);margin-bottom:.3rem}
 .logo em{font-style:italic}
 .auth-sub{font-size:.8rem;color:var(--muted);margin-bottom:2rem}
@@ -29,18 +28,17 @@ input,select{width:100%;background:var(--bg);border:1px solid var(--border);colo
 input::placeholder{color:var(--muted)}
 .btn{background:var(--gold);color:var(--bg);border:none;padding:.8rem;width:100%;border-radius:2px;font-family:'DM Sans',sans-serif;font-size:.82rem;font-weight:500;letter-spacing:.08em;text-transform:uppercase;cursor:pointer;transition:all .2s}
 .btn:hover{background:var(--gold-light)}
+.btn:disabled{opacity:.6;cursor:not-allowed}
 .btn-ghost{background:transparent;color:var(--text);border:1px solid var(--border);width:auto;padding:.55rem 1.1rem;font-size:.78rem;letter-spacing:0;text-transform:none}
 .auth-switch{margin-top:1.25rem;text-align:center;font-size:.78rem;color:var(--muted)}
 .auth-switch span{color:var(--gold-light);cursor:pointer}
-.demo-tip{margin-top:1rem;background:var(--gold-dim);border:1px solid var(--border);border-radius:2px;padding:.65rem 1rem;font-size:.72rem;color:var(--muted)}
-.demo-tip strong{color:var(--gold)}
- 
-/* ── APP LAYOUT ── */
+.err{color:var(--red);font-size:.77rem;margin-bottom:.9rem;display:none}
+.ok{color:var(--green);font-size:.77rem;margin-bottom:.9rem;display:none}
 #app{display:none;min-height:100vh;grid-template-columns:210px 1fr}
 #app.visible{display:grid}
 .sidebar{background:var(--surface);border-right:1px solid var(--border);display:flex;flex-direction:column}
 .sidebar-top{padding:1.4rem 1.25rem 1rem;border-bottom:1px solid var(--border)}
-.sidebar-email{font-size:.7rem;color:var(--muted);margin-top:.2rem}
+.sidebar-email{font-size:.7rem;color:var(--muted);margin-top:.2rem;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .nav{padding:1.25rem .65rem;flex:1}
 .nav-section{font-size:.6rem;letter-spacing:.15em;text-transform:uppercase;color:var(--muted);padding:0 .5rem;margin-bottom:.4rem}
 .nav-item{display:flex;align-items:center;gap:.65rem;padding:.58rem .75rem;border-radius:3px;cursor:pointer;font-size:.82rem;color:var(--muted);margin-bottom:2px;transition:all .15s}
@@ -49,28 +47,21 @@ input::placeholder{color:var(--muted)}
 .nav-icon{width:20px;text-align:center;font-size:.95rem}
 .sidebar-bottom{padding:.9rem 1.25rem;border-top:1px solid var(--border);cursor:pointer;display:flex;align-items:center;gap:.65rem}
 .avatar{width:28px;height:28px;border-radius:50%;background:var(--gold-dim);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:.7rem;color:var(--gold-light);flex-shrink:0;font-weight:500}
-.signout-label{font-size:.7rem;color:var(--muted)}
 .main{display:flex;flex-direction:column;overflow:hidden}
 .topbar{padding:.9rem 1.75rem;border-bottom:1px solid var(--border);background:var(--surface);display:flex;justify-content:space-between;align-items:center;flex-shrink:0}
 .topbar-title{font-size:.82rem;color:var(--text)}
 .status-dot{width:7px;height:7px;border-radius:50%;background:var(--green);display:inline-block;margin-right:.4rem}
 .pro-badge{font-size:.68rem;color:var(--gold);border:1px solid var(--border);padding:.2rem .7rem;border-radius:100px;margin-right:.75rem}
 .content{padding:1.75rem;overflow:auto;flex:1}
- 
-/* ── SECTIONS ── */
 .view{display:none}.view.active{display:block}
 .section-title{font-family:'Cormorant Garamond',serif;font-size:1.45rem;font-weight:300;color:var(--text);margin-bottom:1.4rem}
 .row-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:1.4rem}
 .row-header .section-title{margin-bottom:0}
- 
-/* KPIs */
 .kpi-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:1rem;margin-bottom:1.5rem}
 .kpi{background:var(--surface);border:1px solid var(--border);padding:1.1rem 1.4rem;border-radius:4px}
 .kpi-label{font-size:.67rem;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);margin-bottom:.4rem}
 .kpi-value{font-family:'Cormorant Garamond',serif;font-size:1.9rem;font-weight:600;color:var(--text)}
 .kpi-delta{font-size:.68rem;margin-top:.2rem;color:var(--green)}
- 
-/* TABLE */
 .card{background:var(--surface);border:1px solid var(--border);border-radius:4px;overflow:hidden}
 table{width:100%;border-collapse:collapse}
 th{padding:.7rem 1.1rem;font-size:.67rem;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);text-align:left;font-weight:400;border-bottom:1px solid var(--border)}
@@ -82,14 +73,10 @@ tr:hover td{background:var(--surface2)}
 .pill-cold{background:rgba(255,255,255,.07);color:var(--muted)}
 .td-val{font-family:'Cormorant Garamond',serif;font-size:1.1rem;color:var(--gold-light)}
 .empty-state{padding:3rem;text-align:center;color:var(--muted);font-size:.85rem}
- 
-/* FILTERS */
 .filters{display:flex;gap:.65rem;margin-bottom:1.2rem;flex-wrap:wrap;align-items:center}
 .search-input{width:240px;margin-bottom:0!important}
 .filter-btn{background:transparent;color:var(--muted);border:1px solid var(--border);padding:.4rem .9rem;border-radius:2px;font-size:.75rem;cursor:pointer;font-family:'DM Sans',sans-serif;transition:all .15s}
 .filter-btn:hover,.filter-btn.active{background:var(--gold-dim);color:var(--gold-light);border-color:var(--gold)}
- 
-/* PIPELINE */
 .pipeline-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:1rem;align-items:start}
 .pipeline-col{background:var(--surface);border:1px solid var(--border);border-radius:4px;min-height:180px}
 .col-header{padding:.7rem 1rem;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center}
@@ -106,9 +93,7 @@ tr:hover td{background:var(--surface2)}
 .prob-label{font-size:.63rem;color:var(--muted);margin-top:.25rem}
 .drop-hint{padding:1.25rem;text-align:center;font-size:.73rem;color:var(--muted);border:1px dashed var(--border);border-radius:2px}
 .drag-tip{font-size:.72rem;color:var(--muted);margin-top:.65rem}
- 
-/* MODAL */
-.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.75);display:flex;align-items:center;justify-content:center;z-index:1000;display:none}
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.75);display:none;align-items:center;justify-content:center;z-index:1000}
 .modal-overlay.open{display:flex}
 .modal{background:var(--surface);border:1px solid var(--border);border-radius:4px;padding:2rem;width:420px;max-height:90vh;overflow:auto}
 .modal-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:1.5rem}
@@ -117,12 +102,8 @@ tr:hover td{background:var(--surface2)}
 .modal-actions{display:flex;gap:.65rem;margin-top:.5rem}
 .modal-actions .btn{flex:2;width:auto}
 .modal-actions .btn-ghost{flex:1}
- 
-/* TOAST */
-.toast{position:fixed;bottom:1.5rem;right:1.5rem;background:rgba(92,184,138,.15);border:1px solid var(--green);color:var(--green);padding:.7rem 1.1rem;border-radius:4px;font-size:.8rem;z-index:2000;display:none}
+.toast{position:fixed;bottom:1.5rem;right:1.5rem;padding:.7rem 1.1rem;border-radius:4px;font-size:.8rem;z-index:2000;display:none}
 .toast.show{display:block}
- 
-/* AI */
 .ai-wrap{display:flex;flex-direction:column;height:calc(100vh - 140px)}
 .messages{flex:1;overflow:auto;display:flex;flex-direction:column;gap:.9rem;padding-right:.25rem;margin-bottom:.75rem}
 .msg{display:flex;gap:.65rem;align-items:flex-start}
@@ -133,9 +114,6 @@ tr:hover td{background:var(--surface2)}
 .ai-input-row{display:flex;gap:.65rem;border-top:1px solid var(--border);padding-top:.9rem;flex-shrink:0}
 .ai-input-row input{margin-bottom:0;flex:1}
 .ai-input-row .btn{width:auto;padding:.7rem 1.25rem;white-space:nowrap}
-.typing{color:var(--muted);font-style:italic}
- 
-/* ANALYTICS */
 .chart-wrap{background:var(--surface);border:1px solid var(--border);border-radius:4px;padding:1.4rem;margin-bottom:1.25rem}
 .chart-title{font-size:.7rem;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);margin-bottom:1.1rem}
 canvas{width:100%!important;display:block}
@@ -144,55 +122,40 @@ canvas{width:100%!important;display:block}
 .bar-labels{display:flex;justify-content:space-between;font-size:.77rem;margin-bottom:.3rem}
 .bar-track{background:rgba(255,255,255,.06);height:4px;border-radius:100px}
 .bar-fill{height:4px;border-radius:100px}
- 
-/* ACTIVITY */
 .activity-item{display:flex;gap:.9rem;padding:.7rem 0;border-bottom:1px solid rgba(255,255,255,.04);align-items:center}
-.activity-icon{font-size:.95rem;width:24px;text-align:center;flex-shrink:0}
 .activity-text{flex:1;font-size:.81rem;color:var(--text)}
-.activity-time{font-size:.7rem;color:var(--muted);white-space:nowrap}
- 
-/* DELETE BTN */
 .del-btn{background:none;border:1px solid var(--border);color:var(--muted);padding:.28rem .65rem;border-radius:2px;cursor:pointer;font-size:.7rem;transition:all .15s}
 .del-btn:hover{border-color:var(--red);color:var(--red)}
- 
-@media(max-width:700px){
-  #app.visible{grid-template-columns:1fr}
-  .sidebar{display:none}
-  .kpi-grid{grid-template-columns:repeat(2,1fr)}
-  .pipeline-grid{grid-template-columns:repeat(2,1fr)}
-  .two-col{grid-template-columns:1fr}
-}
+.loading{padding:3rem;text-align:center;color:var(--muted);font-size:.85rem}
+@media(max-width:700px){#app.visible{grid-template-columns:1fr}.sidebar{display:none}.kpi-grid{grid-template-columns:repeat(2,1fr)}.pipeline-grid{grid-template-columns:repeat(2,1fr)}.two-col{grid-template-columns:1fr}}
 </style>
 </head>
 <body>
- 
-<!-- ══ AUTH ══ -->
+
 <div id="auth-screen">
   <div class="auth-bg"></div>
   <div class="auth-grid"></div>
   <div class="auth-card">
     <div class="logo">Aura <em>CRM</em></div>
     <div class="auth-sub" id="auth-sub">Connectez-vous à votre espace</div>
-    <div id="auth-name-wrap" style="display:none">
+    <div id="signup-fields" style="display:none">
       <label>Nom complet</label>
       <input id="auth-name" placeholder="Sophie Martin">
     </div>
     <label>Email</label>
-    <input id="auth-email" type="email" placeholder="vous@entreprise.com">
+    <input id="auth-email" type="email" placeholder="vous@entreprise.com" onkeydown="if(event.key==='Enter')handleAuth()">
     <label>Mot de passe</label>
-    <input id="auth-password" type="password" placeholder="••••••••">
-    <div id="auth-error" style="color:var(--red);font-size:.77rem;margin-bottom:.9rem;display:none"></div>
-    <button class="btn" onclick="handleAuth()">Se connecter</button>
+    <input id="auth-password" type="password" placeholder="••••••••" onkeydown="if(event.key==='Enter')handleAuth()">
+    <div class="err" id="auth-err"></div>
+    <div class="ok" id="auth-ok"></div>
+    <button class="btn" id="auth-btn" onclick="handleAuth()">Se connecter</button>
     <div class="auth-switch">
-      Pas de compte ? <span onclick="toggleAuthMode()">S'inscrire</span>
+      <span id="auth-switch-text">Pas de compte ? </span><span onclick="toggleMode()" id="auth-switch-link">S'inscrire</span>
     </div>
-    <div class="demo-tip">💡 <strong>Demo</strong> — Entre n'importe quel email et mot de passe pour tester</div>
   </div>
 </div>
- 
-<!-- ══ APP ══ -->
+
 <div id="app">
-  <!-- SIDEBAR -->
   <div class="sidebar">
     <div class="sidebar-top">
       <div class="logo" style="font-size:1.35rem">Aura <em>CRM</em></div>
@@ -209,12 +172,10 @@ canvas{width:100%!important;display:block}
       <div class="avatar" id="user-avatar">?</div>
       <div>
         <div style="font-size:.77rem;color:var(--text)">Mon compte</div>
-        <div class="signout-label">Se déconnecter</div>
+        <div style="font-size:.7rem;color:var(--muted)">Se déconnecter</div>
       </div>
     </div>
   </div>
- 
-  <!-- MAIN -->
   <div class="main">
     <div class="topbar">
       <div class="topbar-title" id="topbar-label">👤 Contacts</div>
@@ -225,7 +186,7 @@ canvas{width:100%!important;display:block}
       </div>
     </div>
     <div class="content">
- 
+
       <!-- CONTACTS -->
       <div class="view active" id="view-contacts">
         <div class="row-header">
@@ -244,10 +205,10 @@ canvas{width:100%!important;display:block}
           <table><thead><tr>
             <th>Nom</th><th>Entreprise</th><th>Statut</th><th>Valeur</th><th>Dernier contact</th><th></th>
           </tr></thead>
-          <tbody id="contacts-tbody"></tbody></table>
+          <tbody id="contacts-tbody"><tr><td colspan="6" class="loading">Chargement…</td></tr></tbody></table>
         </div>
       </div>
- 
+
       <!-- PIPELINE -->
       <div class="view" id="view-pipeline">
         <div class="row-header">
@@ -257,10 +218,10 @@ canvas{width:100%!important;display:block}
           </div>
           <button class="btn" style="width:auto;padding:.55rem 1.1rem;font-size:.78rem" onclick="openModal('modal-add-deal')">+ Deal</button>
         </div>
-        <div class="pipeline-grid" id="pipeline-grid"></div>
+        <div class="pipeline-grid" id="pipeline-grid"><div class="loading">Chargement…</div></div>
         <div class="drag-tip">💡 Glisse-dépose les deals pour changer leur étape</div>
       </div>
- 
+
       <!-- AI -->
       <div class="view" id="view-ai">
         <div class="row-header" style="margin-bottom:1.1rem">
@@ -277,7 +238,7 @@ canvas{width:100%!important;display:block}
           </div>
         </div>
       </div>
- 
+
       <!-- ANALYTICS -->
       <div class="view" id="view-analytics">
         <div class="section-title">Analytics</div>
@@ -288,12 +249,12 @@ canvas{width:100%!important;display:block}
         </div>
         <div class="two-col" id="analytics-bottom"></div>
       </div>
- 
+
     </div>
   </div>
 </div>
- 
-<!-- ══ MODALS ══ -->
+
+<!-- MODALS -->
 <div class="modal-overlay" id="modal-add-contact">
   <div class="modal">
     <div class="modal-header">
@@ -313,7 +274,7 @@ canvas{width:100%!important;display:block}
     </div>
   </div>
 </div>
- 
+
 <div class="modal-overlay" id="modal-add-deal">
   <div class="modal">
     <div class="modal-header">
@@ -337,98 +298,99 @@ canvas{width:100%!important;display:block}
     </div>
   </div>
 </div>
- 
+
 <div class="toast" id="toast"></div>
- 
+
 <script>
-// ══ DATA ══
-let contacts = [
-  {id:1,name:'Sophie Martin',company:'Nexeo Group',email:'s.martin@nexeo.com',status:'hot',value:24000,last:'2026-04-29'},
-  {id:2,name:'Thomas Leroy',company:'DataSphere',email:'t.leroy@datasphere.io',status:'warm',value:11500,last:'2026-04-28'},
-  {id:3,name:'Clara Dubois',company:'Lumière Studio',email:'c.dubois@lumiere.fr',status:'hot',value:38000,last:'2026-04-27'},
-  {id:4,name:'Marc Fontaine',company:'Orbis SAS',email:'m.fontaine@orbis.fr',status:'cold',value:5200,last:'2026-04-17'},
-  {id:5,name:'Inès Benali',company:'Crestwave',email:'i.benali@crestwave.com',status:'warm',value:18700,last:'2026-04-26'},
-  {id:6,name:'Julien Morel',company:'Axento Tech',email:'j.morel@axento.io',status:'hot',value:56000,last:'2026-04-29'},
-];
-let deals = [
-  {id:1,name:'Nexeo - Licence annuelle',contact:'Sophie Martin',value:24000,stage:'prospect',prob:30},
-  {id:2,name:'FinPro - Onboarding',contact:'Julien Morel',value:9000,stage:'prospect',prob:20},
-  {id:3,name:'Lumière - Pack Studio',contact:'Clara Dubois',value:38000,stage:'devis',prob:55},
-  {id:4,name:'Axento - Intégration API',contact:'Thomas Leroy',value:12000,stage:'devis',prob:60},
-  {id:5,name:'Axento - Renouvellement',contact:'Julien Morel',value:56000,stage:'nego',prob:75},
-  {id:6,name:'DataSphere - Starter',contact:'Thomas Leroy',value:11500,stage:'gagne',prob:100},
-  {id:7,name:'Crestwave - Pro',contact:'Inès Benali',value:18700,stage:'gagne',prob:100},
-];
+// ══ SUPABASE ══
+const { createClient } = supabase;
+const sb = createClient(
+  'https://wbrtccfbahkltmgxalrr.supabase.co',
+  'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6IndicnRjY2ZiYWhrbHRtZ3hhbHJyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzc1Njg4MDQsImV4cCI6MjA5MzE0NDgwNH0._VxmFbb-HluXjCbi0atAVyxqAXjRcpONQPTxEV9MLLE'
+);
+
 const STAGES=[
   {id:'prospect',label:'Prospection',emoji:'🔍',color:'#7090d0'},
   {id:'devis',label:'Proposition',emoji:'📄',color:'#c9a84c'},
   {id:'nego',label:'Négociation',emoji:'🤝',color:'#c07050'},
   {id:'gagne',label:'Gagné',emoji:'✅',color:'#5cb88a'},
 ];
-let currentFilter='all', currentSearch='', draggingId=null;
-let authMode='login';
- 
+
+let currentUser=null, contacts=[], deals=[], currentFilter='all', currentSearch='', draggingId=null, authMode='login';
+
 // ══ AUTH ══
-function toggleAuthMode(){
-  authMode = authMode==='login'?'signup':'login';
-  document.getElementById('auth-sub').textContent = authMode==='login'?'Connectez-vous à votre espace':'Créez votre compte gratuit';
-  document.getElementById('auth-name-wrap').style.display = authMode==='signup'?'block':'none';
-  document.querySelector('.btn').textContent = authMode==='login'?'Se connecter':'Créer le compte';
-  document.querySelector('.auth-switch span').textContent = authMode==='login'?'S\'inscrire':'Se connecter';
-  document.querySelector('.auth-switch').firstChild.textContent = authMode==='login'?'Pas de compte ? ':'Déjà inscrit ? ';
+sb.auth.onAuthStateChange((event,session)=>{
+  if(session?.user){ currentUser=session.user; launchApp(); }
+  else { showAuth(); }
+});
+
+function toggleMode(){
+  authMode=authMode==='login'?'signup':'login';
+  document.getElementById('auth-sub').textContent=authMode==='login'?'Connectez-vous à votre espace':'Créez votre compte gratuit';
+  document.getElementById('signup-fields').style.display=authMode==='signup'?'block':'none';
+  document.getElementById('auth-btn').textContent=authMode==='login'?'Se connecter':'Créer le compte';
+  document.getElementById('auth-switch-link').textContent=authMode==='login'?'S\'inscrire':'Se connecter';
+  document.getElementById('auth-switch-text').textContent=authMode==='login'?'Pas de compte ? ':'Déjà inscrit ? ';
+  document.getElementById('auth-err').style.display='none';
+  document.getElementById('auth-ok').style.display='none';
 }
-function handleAuth(){
-  const email = document.getElementById('auth-email').value;
-  const pass = document.getElementById('auth-password').value;
-  const err = document.getElementById('auth-error');
-  if(!email||!pass){err.textContent='Remplis tous les champs.';err.style.display='block';return;}
-  err.style.display='none';
-  localStorage.setItem('crm_user', JSON.stringify({email, name: email.split('@')[0]}));
-  launchApp(email);
+
+async function handleAuth(){
+  const email=document.getElementById('auth-email').value.trim();
+  const pass=document.getElementById('auth-password').value;
+  const errEl=document.getElementById('auth-err');
+  const okEl=document.getElementById('auth-ok');
+  const btn=document.getElementById('auth-btn');
+  errEl.style.display='none'; okEl.style.display='none';
+  if(!email||!pass){errEl.textContent='Remplis tous les champs.';errEl.style.display='block';return;}
+  btn.disabled=true; btn.textContent='Chargement…';
+  if(authMode==='login'){
+    const{error}=await sb.auth.signInWithPassword({email,password:pass});
+    if(error){errEl.textContent=error.message==='Invalid login credentials'?'Email ou mot de passe incorrect.':error.message;errEl.style.display='block';}
+  } else {
+    const{error}=await sb.auth.signUp({email,password:pass});
+    if(error){errEl.textContent=error.message;errEl.style.display='block';}
+    else{okEl.textContent='✓ Compte créé ! Vérifie tes emails pour confirmer puis connecte-toi.';okEl.style.display='block';toggleMode();}
+  }
+  btn.disabled=false; btn.textContent=authMode==='login'?'Se connecter':'Créer le compte';
 }
-function launchApp(email){
-  document.getElementById('auth-screen').style.display='none';
-  document.getElementById('app').classList.add('visible');
-  document.getElementById('user-email-display').textContent=email;
-  document.getElementById('user-avatar').textContent=email[0].toUpperCase();
-  // Load saved data
-  const saved = localStorage.getItem('crm_contacts');
-  if(saved) contacts = JSON.parse(saved);
-  const savedDeals = localStorage.getItem('crm_deals');
-  if(savedDeals) deals = JSON.parse(savedDeals);
-  renderContacts(); renderContactsKPIs();
-  renderPipeline();
-  renderAnalytics();
-  initAI();
-}
-function signOut(){
-  localStorage.removeItem('crm_user');
+
+function showAuth(){
   document.getElementById('auth-screen').style.display='flex';
   document.getElementById('app').classList.remove('visible');
 }
-// Auto-login
-window.addEventListener('load',()=>{
-  const u = localStorage.getItem('crm_user');
-  if(u) launchApp(JSON.parse(u).email);
-});
- 
+
+async function launchApp(){
+  document.getElementById('auth-screen').style.display='none';
+  document.getElementById('app').classList.add('visible');
+  document.getElementById('user-email-display').textContent=currentUser.email;
+  document.getElementById('user-avatar').textContent=currentUser.email[0].toUpperCase();
+  await loadContacts();
+  await loadDeals();
+  renderContactsKPIs();
+  renderAnalytics();
+  initAI();
+}
+
+async function signOut(){
+  await sb.auth.signOut();
+}
+
 // ══ NAVIGATION ══
-function goTo(view, el){
+function goTo(view,el){
   document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));
   document.getElementById('view-'+view).classList.add('active');
   document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
   el.classList.add('active');
   const icons={contacts:'👤',pipeline:'💼',ai:'✦',analytics:'📈'};
-  const labels={contacts:'Contacts',pipeline:'Pipeline de vente',ai:'Assistant IA',analytics:'Analytics'};
+  const labels={contacts:'Contacts',pipeline:'Pipeline',ai:'Assistant IA',analytics:'Analytics'};
   document.getElementById('topbar-label').textContent=icons[view]+' '+labels[view];
-  if(view==='analytics') drawChart();
+  if(view==='analytics')drawChart();
 }
- 
-// ══ MODALS ══
-function openModal(id){document.getElementById(id).classList.add('open')}
-function closeModal(id){document.getElementById(id).classList.remove('open')}
- 
-// ══ TOAST ══
+
+function openModal(id){document.getElementById(id).classList.add('open');}
+function closeModal(id){document.getElementById(id).classList.remove('open');}
+
 function showToast(msg,type='success'){
   const t=document.getElementById('toast');
   t.textContent=(type==='success'?'✓ ':'✕ ')+msg;
@@ -438,14 +400,20 @@ function showToast(msg,type='success'){
   t.classList.add('show');
   setTimeout(()=>t.classList.remove('show'),3000);
 }
- 
+
 // ══ CONTACTS ══
-function saveContacts(){localStorage.setItem('crm_contacts',JSON.stringify(contacts));}
-function avatarColors(name){
+function avatarColor(name){
   const p=['#c9a84c','#5cb88a','#7090d0','#c07050','#e07090','#9070c0'];
   return p[(name||'?').charCodeAt(0)%p.length];
 }
 function initials(name){return(name||'?').split(' ').map(w=>w[0]).slice(0,2).join('').toUpperCase();}
+
+async function loadContacts(){
+  const{data}=await sb.from('contacts').select('*').order('created_at',{ascending:false});
+  contacts=data||[];
+  renderContacts();
+}
+
 function renderContactsKPIs(){
   const total=contacts.length,hot=contacts.filter(c=>c.status==='hot').length;
   const val=contacts.reduce((a,c)=>a+(c.value||0),0);
@@ -454,10 +422,11 @@ function renderContactsKPIs(){
     {l:'Valeur totale',v:'€'+(val/1000).toFixed(0)+'k'},{l:'Taux conv.',v:'34%'},
   ].map(k=>`<div class="kpi"><div class="kpi-label">${k.l}</div><div class="kpi-value">${k.v}</div><div class="kpi-delta">↑ En hausse</div></div>`).join('');
 }
+
 function renderContacts(){
   const list=contacts.filter(c=>{
     const q=currentSearch.toLowerCase();
-    const matchQ=!q||c.name.toLowerCase().includes(q)||c.company.toLowerCase().includes(q)||c.email.toLowerCase().includes(q);
+    const matchQ=!q||c.name.toLowerCase().includes(q)||(c.company||'').toLowerCase().includes(q)||(c.email||'').toLowerCase().includes(q);
     return matchQ&&(currentFilter==='all'||c.status===currentFilter);
   });
   document.getElementById('contact-count').textContent='('+list.length+')';
@@ -466,16 +435,18 @@ function renderContacts(){
     ?'<tr><td colspan="6" class="empty-state">Aucun contact — ajoute le premier !</td></tr>'
     :list.map(c=>`<tr>
       <td><div style="display:flex;align-items:center;gap:.6rem">
-        <div style="width:30px;height:30px;border-radius:50%;background:${avatarColors(c.name)}28;color:${avatarColors(c.name)};border:1px solid ${avatarColors(c.name)}44;display:flex;align-items:center;justify-content:center;font-size:.7rem;font-weight:500;flex-shrink:0">${initials(c.name)}</div>
-        <div><div style="font-size:.84rem">${c.name}</div><div style="font-size:.7rem;color:var(--muted)">${c.email}</div></div>
+        <div style="width:30px;height:30px;border-radius:50%;background:${avatarColor(c.name)}28;color:${avatarColor(c.name)};border:1px solid ${avatarColor(c.name)}44;display:flex;align-items:center;justify-content:center;font-size:.7rem;font-weight:500;flex-shrink:0">${initials(c.name)}</div>
+        <div><div style="font-size:.84rem">${c.name}</div><div style="font-size:.7rem;color:var(--muted)">${c.email||''}</div></div>
       </div></td>
-      <td style="color:var(--muted)">${c.company}</td>
-      <td><span class="pill pill-${c.status}">${statusLabel[c.status]}</span></td>
-      <td class="td-val">${c.value?'€'+c.value.toLocaleString():'—'}</td>
-      <td style="color:var(--muted)">${c.last||'—'}</td>
-      <td><button class="del-btn" onclick="deleteContact(${c.id})">✕</button></td>
+      <td style="color:var(--muted)">${c.company||'—'}</td>
+      <td><span class="pill pill-${c.status}">${statusLabel[c.status]||c.status}</span></td>
+      <td class="td-val">${c.value?'€'+Number(c.value).toLocaleString():'—'}</td>
+      <td style="color:var(--muted)">${c.last_contact||'—'}</td>
+      <td><button class="del-btn" onclick="deleteContact('${c.id}')">✕</button></td>
     </tr>`).join('');
+  renderContactsKPIs();
 }
+
 function filterContacts(q){currentSearch=q;renderContacts();}
 function setFilter(f,btn){
   currentFilter=f;
@@ -483,26 +454,41 @@ function setFilter(f,btn){
   btn.classList.add('active');
   renderContacts();
 }
-function addContact(){
+
+async function addContact(){
   const name=document.getElementById('c-name').value.trim();
   if(!name){showToast('Le nom est obligatoire','error');return;}
-  contacts.push({id:Date.now(),name,company:document.getElementById('c-company').value,email:document.getElementById('c-email').value,status:document.getElementById('c-status').value,value:Number(document.getElementById('c-value').value)||0,last:new Date().toISOString().split('T')[0]});
-  saveContacts();renderContacts();renderContactsKPIs();
+  const{error}=await sb.from('contacts').insert([{
+    name,company:document.getElementById('c-company').value,
+    email:document.getElementById('c-email').value,
+    phone:document.getElementById('c-phone').value,
+    status:document.getElementById('c-status').value,
+    value:Number(document.getElementById('c-value').value)||0,
+    user_id:currentUser.id,last_contact:new Date().toISOString().split('T')[0]
+  }]);
+  if(error){showToast(error.message,'error');return;}
+  showToast('Contact ajouté !');
   closeModal('modal-add-contact');
   ['c-name','c-company','c-email','c-phone','c-value'].forEach(id=>document.getElementById(id).value='');
   document.getElementById('c-status').value='warm';
-  showToast('Contact ajouté !');
+  await loadContacts();
 }
-function deleteContact(id){
-  contacts=contacts.filter(c=>c.id!==id);
-  saveContacts();renderContacts();renderContactsKPIs();
+
+async function deleteContact(id){
+  await sb.from('contacts').delete().eq('id',id);
   showToast('Contact supprimé');
+  await loadContacts();
 }
- 
+
 // ══ PIPELINE ══
-function saveDeals(){localStorage.setItem('crm_deals',JSON.stringify(deals));}
+async function loadDeals(){
+  const{data}=await sb.from('deals').select('*').order('created_at',{ascending:false});
+  deals=data||[];
+  renderPipeline();
+}
+
 function renderPipeline(){
-  const weighted=deals.filter(d=>d.stage!=='gagne').reduce((a,d)=>a+(d.value||0)*(d.prob||0)/100,0);
+  const weighted=deals.filter(d=>d.stage!=='gagne').reduce((a,d)=>a+(d.value||0)*(d.probability||0)/100,0);
   document.getElementById('pipeline-weighted').textContent='€'+Math.round(weighted).toLocaleString();
   document.getElementById('pipeline-grid').innerHTML=STAGES.map(st=>{
     const sd=deals.filter(d=>d.stage===st.id);
@@ -513,39 +499,49 @@ function renderPipeline(){
         <div class="col-val" style="color:${st.color}">${sv?'€'+(sv/1000).toFixed(0)+'k':'—'}</div>
       </div>
       <div class="col-body">
-        ${sd.map(d=>`<div class="deal-card" draggable="true" ondragstart="draggingId=${d.id}">
+        ${sd.map(d=>`<div class="deal-card" draggable="true" ondragstart="draggingId='${d.id}'">
           <div class="deal-name">${d.name}</div>
-          <div class="deal-contact">${d.contact}</div>
-          <div class="deal-value" style="color:${st.color}">${d.value?'€'+d.value.toLocaleString():'—'}</div>
-          <div class="prob-bar"><div class="prob-fill" style="background:${st.color};width:${d.prob}%"></div></div>
-          <div class="prob-label">${d.prob}% probabilité</div>
+          <div class="deal-contact">${d.contact||''}</div>
+          <div class="deal-value" style="color:${st.color}">${d.value?'€'+Number(d.value).toLocaleString():'—'}</div>
+          <div class="prob-bar"><div class="prob-fill" style="background:${st.color};width:${d.probability||0}%"></div></div>
+          <div class="prob-label">${d.probability||0}% probabilité</div>
         </div>`).join('')}
         ${sd.length===0?'<div class="drop-hint">Glisse un deal ici</div>':''}
       </div>
     </div>`;
   }).join('');
 }
-function dropDeal(stage){
+
+async function dropDeal(stage){
   if(!draggingId)return;
-  deals=deals.map(d=>d.id===draggingId?{...d,stage}:d);
-  draggingId=null;saveDeals();renderPipeline();showToast('Deal déplacé !');
+  await sb.from('deals').update({stage}).eq('id',draggingId);
+  draggingId=null;
+  showToast('Deal déplacé !');
+  await loadDeals();
 }
-function addDeal(){
+
+async function addDeal(){
   const name=document.getElementById('d-name').value.trim();
   if(!name){showToast('Le nom est obligatoire','error');return;}
-  deals.push({id:Date.now(),name,contact:document.getElementById('d-contact').value,value:Number(document.getElementById('d-value').value)||0,stage:document.getElementById('d-stage').value,prob:Number(document.getElementById('d-prob').value)||30});
-  saveDeals();renderPipeline();
+  const{error}=await sb.from('deals').insert([{
+    name,contact:document.getElementById('d-contact').value,
+    value:Number(document.getElementById('d-value').value)||0,
+    stage:document.getElementById('d-stage').value,
+    probability:Number(document.getElementById('d-prob').value)||30,
+    user_id:currentUser.id
+  }]);
+  if(error){showToast(error.message,'error');return;}
+  showToast('Deal ajouté !');
   closeModal('modal-add-deal');
   ['d-name','d-contact','d-value'].forEach(id=>document.getElementById(id).value='');
   document.getElementById('d-stage').value='prospect';
   document.getElementById('d-prob').value='30';
-  showToast('Deal ajouté !');
+  await loadDeals();
 }
- 
-// ══ AI ASSISTANT ══
-const AI_KEY=()=>window._anthropicKey||'';
+
+// ══ AI ══
 function initAI(){
-  addMessage('assistant','Bonjour ! Je suis votre assistant CRM alimenté par Claude ✦\n\nJe peux analyser vos contacts, résumer votre pipeline, rédiger des emails de relance...\n\nExemples :\n• « Résume mon pipeline actuel »\n• « Rédige un email de relance pour un prospect tiède »\n• « Quels contacts ont le plus de valeur ? »\n\n⚠️ Pour activer l\'IA, ajoutez votre clé Anthropic via la console (window._anthropicKey = "sk-ant-...")');
+  addMessage('assistant','Bonjour ! Je suis votre assistant CRM ✦\n\nJe peux analyser vos contacts, résumer votre pipeline, rédiger des emails...\n\nExemples :\n• « Résume mon pipeline »\n• « Rédige un email de relance »\n• « Conseils pour convertir plus »');
 }
 function addMessage(role,content){
   const msgs=document.getElementById('messages');
@@ -563,45 +559,40 @@ async function sendAI(){
   inp.value='';
   addMessage('user',text);
   aiHistory.push({role:'user',content:text});
-  const typingDiv=document.createElement('div');
-  typingDiv.className='msg';
-  typingDiv.innerHTML='<div class="msg-avatar">✦</div><div class="msg-bubble typing">Analyse en cours…</div>';
-  document.getElementById('messages').appendChild(typingDiv);
- 
-  const key=AI_KEY();
-  if(!key||key.startsWith('sk-ant-XXXX')){
-    typingDiv.remove();
-    addMessage('assistant','⚠️ Clé API non configurée.\n\nPour activer l\'IA Claude :\n1. Va sur console.anthropic.com\n2. Crée une clé API\n3. Dans la console du navigateur (F12), tape :\nwindow._anthropicKey = "ta-clé-ici"');
-    return;
-  }
+  const typing=document.createElement('div');
+  typing.className='msg';
+  typing.innerHTML='<div class="msg-avatar">✦</div><div class="msg-bubble" style="color:var(--muted);font-style:italic">Analyse en cours…</div>';
+  document.getElementById('messages').appendChild(typing);
+  document.getElementById('messages').scrollTop=999999;
   try{
-    const ctx=`Tu es l'assistant IA d'Aura CRM. Données actuelles :
-CONTACTS: ${contacts.map(c=>`${c.name}(${c.company},${c.status},€${c.value})`).join(', ')}
-DEALS: ${deals.map(d=>`${d.name} €${d.value} étape:${d.stage} ${d.prob}%`).join(', ')}
+    const ctx=`Tu es l'assistant IA d'Aura CRM. Données :
+CONTACTS(${contacts.length}): ${contacts.slice(0,10).map(c=>`${c.name}(${c.company||''},${c.status},€${c.value||0})`).join(', ')}
+DEALS(${deals.length}): ${deals.slice(0,10).map(d=>`${d.name} €${d.value||0} ${d.stage} ${d.probability||0}%`).join(', ')}
 Réponds en français, sois concis et professionnel.`;
     const res=await fetch('https://api.anthropic.com/v1/messages',{
       method:'POST',
-      headers:{'Content-Type':'application/json','x-api-key':key,'anthropic-version':'2023-06-01'},
-      body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:1000,system:ctx,messages:aiHistory})
+      headers:{'Content-Type':'application/json','x-api-key':'REMPLACE_PAR_TA_CLE_ANTHROPIC','anthropic-version':'2023-06-01'},
+      body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:800,system:ctx,messages:aiHistory})
     });
     const data=await res.json();
-    const reply=data.content?.map(b=>b.text||'').join('')||'Erreur.';
+    const reply=data.content?.map(b=>b.text||'').join('')||'Pour activer l\'IA, ajoute ta clé Anthropic dans le code.';
     aiHistory.push({role:'assistant',content:reply});
-    typingDiv.remove();
+    typing.remove();
     addMessage('assistant',reply);
   }catch(e){
-    typingDiv.remove();
-    addMessage('assistant','Erreur de connexion à l\'API.');
+    typing.remove();
+    addMessage('assistant','Pour activer l\'IA Claude, remplace REMPLACE_PAR_TA_CLE_ANTHROPIC par ta vraie clé sur console.anthropic.com');
   }
 }
- 
+
 // ══ ANALYTICS ══
 function renderAnalytics(){
   document.getElementById('analytics-kpis').innerHTML=[
-    {l:'Revenu mensuel',v:'€42k',d:'+18%'},{l:'Deals gagnés',v:deals.filter(d=>d.stage==='gagne').length,d:'ce mois'},
-    {l:'Valeur pipeline',v:'€'+(deals.filter(d=>d.stage!=='gagne').reduce((a,d)=>a+(d.value||0),0)/1000).toFixed(0)+'k',d:'en cours'},{l:'NPS',v:'72',d:'+5 pts'},
-  ].map(k=>`<div class="kpi"><div class="kpi-label">${k.l}</div><div class="kpi-value">${k.v}</div><div class="kpi-delta">↑ ${k.d}</div></div>`).join('');
- 
+    {l:'Contacts total',v:contacts.length||0},
+    {l:'Deals gagnés',v:deals.filter(d=>d.stage==='gagne').length},
+    {l:'Valeur pipeline',v:'€'+(deals.reduce((a,d)=>a+(d.value||0),0)/1000).toFixed(0)+'k'},
+    {l:'Taux conv.',v:deals.length?Math.round(deals.filter(d=>d.stage==='gagne').length/deals.length*100)+'%':'0%'},
+  ].map(k=>`<div class="kpi"><div class="kpi-label">${k.l}</div><div class="kpi-value">${k.v}</div><div class="kpi-delta">↑ En cours</div></div>`).join('');
   const max=Math.max(...STAGES.map(s=>deals.filter(d=>d.stage===s.id).reduce((a,d)=>a+(d.value||0),0)),1);
   document.getElementById('analytics-bottom').innerHTML=`
     <div class="card" style="padding:1.4rem">
@@ -612,20 +603,22 @@ function renderAnalytics(){
       }).join('')}
     </div>
     <div class="card" style="padding:1.4rem">
-      <div class="chart-title">Statistiques deals</div>
+      <div class="chart-title">Résumé</div>
       ${[
-        ['Total deals',deals.length],['Deals gagnés',deals.filter(d=>d.stage==='gagne').length],
+        ['Total contacts',contacts.length],
+        ['Deals gagnés',deals.filter(d=>d.stage==='gagne').length],
         ['En négociation',deals.filter(d=>d.stage==='nego').length],
-        ['Taux conversion',deals.length?Math.round(deals.filter(d=>d.stage==='gagne').length/deals.length*100)+'%':'—'],
+        ['Valeur totale','€'+contacts.reduce((a,c)=>a+(c.value||0),0).toLocaleString()],
       ].map(([l,v])=>`<div class="activity-item"><div class="activity-text">${l}</div><div style="font-family:'Cormorant Garamond',serif;font-size:1.1rem;color:var(--gold-light)">${v}</div></div>`).join('')}
     </div>`;
 }
+
 let chartDrawn=false;
 function drawChart(){
   if(chartDrawn)return; chartDrawn=true;
   const canvas=document.getElementById('revenue-chart');
   const ctx=canvas.getContext('2d');
-  const W=canvas.offsetWidth||300,H=130;
+  const W=canvas.offsetWidth||400,H=130;
   canvas.width=W;canvas.height=H;
   const data=[28000,35000,31000,42000,38000,42000];
   const labels=['Nov','Déc','Jan','Fév','Mar','Avr'];
